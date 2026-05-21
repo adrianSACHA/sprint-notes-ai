@@ -39,6 +39,7 @@ function App() {
   const [currentWeek, setCurrentWeek] = useState(0);
   const [newOpen, setNewOpen] = useState(false);
   const [bootstrapping, setBootstrapping] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const loadSprints = useCallback(async () => {
     if (!user) return;
@@ -115,6 +116,8 @@ function App() {
         weeks={weeks}
         currentWeek={currentWeek}
         onWeekChange={setCurrentWeek}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
       />
 
       {selectedSprint ? (
