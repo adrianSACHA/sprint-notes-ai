@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, ChevronLeft, ChevronRight, LogOut, Moon, Sun } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, LogOut, Moon, Sun, PanelLeft, PanelRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Sprint } from "@/lib/standup";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,6 +15,8 @@ export function Sidebar({
   weeks,
   currentWeek,
   onWeekChange,
+  collapsed,
+  onToggleCollapse,
 }: {
   sprints: Sprint[];
   selectedId: string | null;
@@ -24,55 +26,127 @@ export function Sidebar({
   weeks: number;
   currentWeek: number;
   onWeekChange: (i: number) => void;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 }) {
   const { user, signOut } = useAuth();
   const { theme, toggle } = useTheme();
 
   return (
-    <aside className="w-64 shrink-0 bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col h-screen">
-      <div className="px-4 py-4 border-b border-sidebar-border">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-base font-semibold tracking-tight">StandupLog</div>
-            <div className="text-xs text-muted-foreground truncate">{user?.email}</div>
+    <aside
+      className={cn(
+        "shrink-0 bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col h-screen transition-all duration-200",
+        collapsed ? "w-16" : "w-64"
+      )}
+    >
+      {/* Header */}
+      <div
+        className={cn(
+          "border-b border-sidebar-border",
+          collapsed ? "px-2 py-3 flex flex-col items-center gap-2" : "px-4 py-4"
+        )}
+      >
+        {!collapsed ? (
+          <div className="flex items-center justify-between">
+            <div className="min-w-0">
+              <div className="text-base font-semibold tracking-tight">StandupLog</div>
+              <div className="text-xs text-muted-foreground truncate">{user?.email}</div>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={toggle}
+                className="p-1.5 rounded-md hover:bg-sidebar-accent text-muted-foreground"
+                aria-label="Toggle theme"
+              >
+                {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+              </button>
+              <button
+                onClick={onToggleCollapse}
+                className="p-1.5 rounded-md hover:bg-sidebar-accent text-muted-foreground"
+                aria-label="Zwiń panel"
+              >
+                <PanelLeft className="size-4" />
+              </button>
+            </div>
           </div>
-          <button
-            onClick={toggle}
-            className="p-1.5 rounded-md hover:bg-sidebar-accent text-muted-foreground"
-            aria-label="Toggle theme"
-          >
-            {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
-          </button>
-        </div>
+        ) : (
+          <div className="flex flex-col items-center gap-2">
+            <button
+              onClick={onToggleCollapse}
+              className="p-1.5 rounded-md hover:bg-sidebar-accent text-muted-foreground"
+              aria-label="Rozwiń panel"
+            >
+              <PanelRight className="size-4" />
+            </button>
+            <button
+              onClick={toggle}
+              className="p-1.5 rounded-md hover:bg-sidebar-accent text-muted-foreground"
+              aria-label="Toggle theme"
+            >
+              {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+            </button>
+          </div>
+        )}
       </div>
 
-      <div className="px-3 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        Sprinty
-      </div>
+      {/* Sprints list */}
+      {!collapsed && (
+        <div className="px-3 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Sprinty
+        </div>
+      )}
       <div className="flex-1 overflow-y-auto px-2 space-y-1">
         {sprints.length === 0 && (
-          <div className="px-2 py-1 text-sm text-muted-foreground">Brak sprintów</div>
+          <div className={cn("text-sm text-muted-foreground", collapsed ? "px-1 py-1 text-center" : "px-2 py-1")}>
+            Brak
+          </div>
         )}
-        {sprints.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => onSelect(s.id)}
-            className={cn(
-              "w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between gap-2 transition-colors",
-              selectedId === s.id
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "hover:bg-sidebar-accent/60 text-sidebar-foreground"
-            )}
-          >
-            <span className="truncate">{s.name}</span>
-            <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
-              {noteCounts[s.id] ?? 0}
-            </Badge>
-          </button>
-        ))}
+        {sprints.map((s) => {
+          const active = selectedId === s.id;
+          return (
+            <button
+              key={s.id}
+              onClick={() => onSelect(s.id)}
+              title={collapsed ? s.name : undefined}
+              className={cn(
+                "w-full rounded-md transition-colors",
+                collapsed
+                  ? "flex items-center justify-center py-2"
+                  : "text-left px-3 py-2 text-sm flex items-center justify-between gap-2",
+                active
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "hover:bg-sidebar-accent/60 text-sidebar-foreground"
+              )}
+            >
+              {!collapsed ? (
+                <>
+                  <span className="truncate">{s.name}</span>
+                  <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
+                    {noteCounts[s.id] ?? 0}
+                  </Badge>
+                </>
+              ) : (
+                <span
+                  className={cn(
+                    "flex items-center justify-center rounded-md text-[10px] font-semibold h-8 w-8",
+                    active ? "bg-sidebar-accent text-sidebar-accent-foreground" : "bg-sidebar-accent/40 text-sidebar-foreground"
+                  )}
+                >
+                  {s.name
+                    .split(" ")
+                    .map((w) => w[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase()}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
-      {selectedId && weeks > 1 && (
+      {/* Week nav */}
+      {selectedId && weeks > 1 && !collapsed && (
         <div className="px-3 py-3 border-t border-sidebar-border">
           <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Tydzień</div>
           <div className="flex items-center justify-between gap-2">
@@ -101,15 +175,34 @@ export function Sidebar({
         </div>
       )}
 
-      <div className="p-3 border-t border-sidebar-border space-y-2">
-        <Button onClick={onNewSprint} className="w-full" size="sm">
-          <Plus className="size-4 mr-1" />
-          Nowy sprint
-        </Button>
-        <Button onClick={signOut} variant="ghost" size="sm" className="w-full text-muted-foreground">
-          <LogOut className="size-4 mr-1" />
-          Wyloguj
-        </Button>
+      {/* Footer buttons */}
+      <div
+        className={cn(
+          "p-3 border-t border-sidebar-border",
+          collapsed ? "flex flex-col items-center gap-2" : "space-y-2"
+        )}
+      >
+        {collapsed ? (
+          <>
+            <Button onClick={onNewSprint} variant="ghost" size="icon" className="size-8" aria-label="Nowy sprint">
+              <Plus className="size-4" />
+            </Button>
+            <Button onClick={signOut} variant="ghost" size="icon" className="size-8 text-muted-foreground" aria-label="Wyloguj">
+              <LogOut className="size-4" />
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button onClick={onNewSprint} className="w-full" size="sm">
+              <Plus className="size-4 mr-1" />
+              Nowy sprint
+            </Button>
+            <Button onClick={signOut} variant="ghost" size="sm" className="w-full text-muted-foreground">
+              <LogOut className="size-4 mr-1" />
+              Wyloguj
+            </Button>
+          </>
+        )}
       </div>
     </aside>
   );
