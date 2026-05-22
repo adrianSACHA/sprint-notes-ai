@@ -16,11 +16,13 @@ export function SprintView({
   notes,
   currentWeek,
   onNotesChange,
+  onSprintChange,
 }: {
   sprint: Sprint;
   notes: Note[];
   currentWeek: number;
   onNotesChange: () => void;
+  onSprintChange: () => void;
 }) {
   const { user } = useAuth();
   const weeks = useMemo(() => sprintWeeks(sprint), [sprint]);
