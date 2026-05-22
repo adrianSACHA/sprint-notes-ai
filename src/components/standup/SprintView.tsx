@@ -309,6 +309,13 @@ export function SprintView({
       </div>
 
       <SprintReviewDialog open={reviewOpen} onOpenChange={setReviewOpen} sprint={sprint} notes={notes} />
+      <EditSprintDialog
+        open={editSprintOpen}
+        onOpenChange={setEditSprintOpen}
+        sprint={sprint}
+        onSaved={onSprintChange}
+        onDeleted={onSprintChange}
+      />
     </div>
   );
 }
