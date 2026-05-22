@@ -206,26 +206,83 @@ export function SprintView({
           <div className="text-sm text-muted-foreground">Brak notatek – wpisz co robiłeś</div>
         ) : (
           <ul className="space-y-2 max-w-3xl">
-            {dayNotes.map((n) => (
-              <li
-                key={n.id}
-                className="group flex items-start justify-between gap-4 rounded-md bg-card px-4 py-3 hover:bg-accent/40 transition-colors"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm whitespace-pre-wrap break-words">{n.text}</div>
-                  <div className="text-[11px] text-muted-foreground mt-1">
-                    {format(parseISO(n.created_at), "HH:mm")}
-                  </div>
-                </div>
-                <button
-                  onClick={() => remove(n.id)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                  aria-label="Usuń notatkę"
+            {dayNotes.map((n) => {
+              const isEditing = editingId === n.id;
+              return (
+                <li
+                  key={n.id}
+                  className="group flex items-start justify-between gap-4 rounded-md bg-card px-4 py-3 hover:bg-accent/40 transition-colors"
                 >
-                  <Trash2 className="size-4" />
-                </button>
-              </li>
-            ))}
+                  <div className="flex-1 min-w-0">
+                    {isEditing ? (
+                      <>
+                        <Textarea
+                          autoFocus
+                          value={editingText}
+                          onChange={(e) => setEditingText(e.target.value.slice(0, 500))}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                              e.preventDefault();
+                              saveEdit(n.id);
+                            } else if (e.key === "Escape") {
+                              e.preventDefault();
+                              cancelEdit();
+                            }
+                          }}
+                          rows={2}
+                          className="resize-none text-sm"
+                        />
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-[11px] text-muted-foreground">
+                            {editingText.length}/500 · Ctrl+Enter zapisz, Esc anuluj
+                          </span>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={cancelEdit}
+                              disabled={editSaving}
+                            >
+                              <X className="size-4 mr-1" />
+                              Anuluj
+                            </Button>
+                            <Button size="sm" onClick={() => saveEdit(n.id)} disabled={editSaving}>
+                              <Check className="size-4 mr-1" />
+                              Zapisz
+                            </Button>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-sm whitespace-pre-wrap break-words">{n.text}</div>
+                        <div className="text-[11px] text-muted-foreground mt-1">
+                          {format(parseISO(n.created_at), "HH:mm")}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  {!isEditing && (
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => startEdit(n)}
+                        className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-accent"
+                        aria-label="Edytuj notatkę"
+                      >
+                        <Pencil className="size-4" />
+                      </button>
+                      <button
+                        onClick={() => remove(n.id)}
+                        className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        aria-label="Usuń notatkę"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
