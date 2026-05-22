@@ -139,8 +139,18 @@ export function SprintView({
     <div className="flex-1 flex flex-col h-screen min-w-0">
       {/* Header */}
       <header className="px-8 py-5 border-b border-border flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">{sprint.name}</h1>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-semibold tracking-tight truncate">{sprint.name}</h1>
+            <button
+              onClick={() => setEditSprintOpen(true)}
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              aria-label="Edytuj sprint"
+              title="Edytuj sprint"
+            >
+              <Pencil className="size-4" />
+            </button>
+          </div>
           <p className="text-sm text-muted-foreground mt-0.5">
             {format(parseISO(sprint.start_date), "d MMM")} – {format(parseISO(sprint.end_date), "d MMM yyyy")}
           </p>
