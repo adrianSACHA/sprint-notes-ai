@@ -97,6 +97,37 @@ export function SprintView({
     onNotesChange();
   }
 
+  function startEdit(n: Note) {
+    setEditingId(n.id);
+    setEditingText(n.text);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditingText("");
+  }
+
+  async function saveEdit(id: string) {
+    const trimmed = editingText.trim();
+    if (!trimmed) {
+      toast.error("Notatka nie może być pusta");
+      return;
+    }
+    if (trimmed.length > 500) {
+      toast.error("Maksymalnie 500 znaków");
+      return;
+    }
+    setEditSaving(true);
+    const { error } = await supabase.from("notes").update({ text: trimmed }).eq("id", id);
+    setEditSaving(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    cancelEdit();
+    onNotesChange();
+  }
+
   function handleKey(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
