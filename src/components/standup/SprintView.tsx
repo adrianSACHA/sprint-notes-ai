@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Trash2, FileText } from "lucide-react";
+import { Send, Trash2, FileText, Pencil, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isSameDay, parseISO } from "date-fns";
 import { isoDate, sprintWeeks, daysWithNotes, type Note, type Sprint } from "@/lib/standup";
@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { SprintReviewDialog } from "./SprintReviewDialog";
+import { EditSprintDialog } from "./EditSprintDialog";
 
 export function SprintView({
   sprint,
