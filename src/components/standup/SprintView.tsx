@@ -59,6 +59,10 @@ export function SprintView({
   const [submitting, setSubmitting] = useState(false);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [editSprintOpen, setEditSprintOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
 
   async function submit() {
     const trimmed = text.trim();
