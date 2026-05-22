@@ -126,6 +126,9 @@ function App() {
           notes={sprintNotes}
           currentWeek={currentWeek}
           onNotesChange={loadAllNotes}
+          onSprintChange={async () => {
+            await Promise.all([loadSprints(), loadAllNotes()]);
+          }}
         />
       ) : (
         <div className="flex-1 grid place-items-center px-8">

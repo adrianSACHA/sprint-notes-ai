@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Trash2, FileText } from "lucide-react";
+import { Send, Trash2, FileText, Pencil, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isSameDay, parseISO } from "date-fns";
 import { isoDate, sprintWeeks, daysWithNotes, type Note, type Sprint } from "@/lib/standup";
@@ -9,17 +9,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { SprintReviewDialog } from "./SprintReviewDialog";
+import { EditSprintDialog } from "./EditSprintDialog";
 
 export function SprintView({
   sprint,
   notes,
   currentWeek,
   onNotesChange,
+  onSprintChange,
 }: {
   sprint: Sprint;
   notes: Note[];
   currentWeek: number;
   onNotesChange: () => void;
+  onSprintChange: () => void;
 }) {
   const { user } = useAuth();
   const weeks = useMemo(() => sprintWeeks(sprint), [sprint]);
@@ -56,6 +59,10 @@ export function SprintView({
   const [submitting, setSubmitting] = useState(false);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [editSprintOpen, setEditSprintOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
 
   async function submit() {
     const trimmed = text.trim();
@@ -90,6 +97,37 @@ export function SprintView({
     onNotesChange();
   }
 
+  function startEdit(n: Note) {
+    setEditingId(n.id);
+    setEditingText(n.text);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditingText("");
+  }
+
+  async function saveEdit(id: string) {
+    const trimmed = editingText.trim();
+    if (!trimmed) {
+      toast.error("Notatka nie może być pusta");
+      return;
+    }
+    if (trimmed.length > 500) {
+      toast.error("Maksymalnie 500 znaków");
+      return;
+    }
+    setEditSaving(true);
+    const { error } = await supabase.from("notes").update({ text: trimmed }).eq("id", id);
+    setEditSaving(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    cancelEdit();
+    onNotesChange();
+  }
+
   function handleKey(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -101,8 +139,18 @@ export function SprintView({
     <div className="flex-1 flex flex-col h-screen min-w-0">
       {/* Header */}
       <header className="px-8 py-5 border-b border-border flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">{sprint.name}</h1>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-semibold tracking-tight truncate">{sprint.name}</h1>
+            <button
+              onClick={() => setEditSprintOpen(true)}
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              aria-label="Edytuj sprint"
+              title="Edytuj sprint"
+            >
+              <Pencil className="size-4" />
+            </button>
+          </div>
           <p className="text-sm text-muted-foreground mt-0.5">
             {format(parseISO(sprint.start_date), "d MMM")} – {format(parseISO(sprint.end_date), "d MMM yyyy")}
           </p>
@@ -158,26 +206,83 @@ export function SprintView({
           <div className="text-sm text-muted-foreground">Brak notatek – wpisz co robiłeś</div>
         ) : (
           <ul className="space-y-2 max-w-3xl">
-            {dayNotes.map((n) => (
-              <li
-                key={n.id}
-                className="group flex items-start justify-between gap-4 rounded-md bg-card px-4 py-3 hover:bg-accent/40 transition-colors"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm whitespace-pre-wrap break-words">{n.text}</div>
-                  <div className="text-[11px] text-muted-foreground mt-1">
-                    {format(parseISO(n.created_at), "HH:mm")}
-                  </div>
-                </div>
-                <button
-                  onClick={() => remove(n.id)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                  aria-label="Usuń notatkę"
+            {dayNotes.map((n) => {
+              const isEditing = editingId === n.id;
+              return (
+                <li
+                  key={n.id}
+                  className="group flex items-start justify-between gap-4 rounded-md bg-card px-4 py-3 hover:bg-accent/40 transition-colors"
                 >
-                  <Trash2 className="size-4" />
-                </button>
-              </li>
-            ))}
+                  <div className="flex-1 min-w-0">
+                    {isEditing ? (
+                      <>
+                        <Textarea
+                          autoFocus
+                          value={editingText}
+                          onChange={(e) => setEditingText(e.target.value.slice(0, 500))}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                              e.preventDefault();
+                              saveEdit(n.id);
+                            } else if (e.key === "Escape") {
+                              e.preventDefault();
+                              cancelEdit();
+                            }
+                          }}
+                          rows={2}
+                          className="resize-none text-sm"
+                        />
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-[11px] text-muted-foreground">
+                            {editingText.length}/500 · Ctrl+Enter zapisz, Esc anuluj
+                          </span>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={cancelEdit}
+                              disabled={editSaving}
+                            >
+                              <X className="size-4 mr-1" />
+                              Anuluj
+                            </Button>
+                            <Button size="sm" onClick={() => saveEdit(n.id)} disabled={editSaving}>
+                              <Check className="size-4 mr-1" />
+                              Zapisz
+                            </Button>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-sm whitespace-pre-wrap break-words">{n.text}</div>
+                        <div className="text-[11px] text-muted-foreground mt-1">
+                          {format(parseISO(n.created_at), "HH:mm")}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  {!isEditing && (
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => startEdit(n)}
+                        className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-accent"
+                        aria-label="Edytuj notatkę"
+                      >
+                        <Pencil className="size-4" />
+                      </button>
+                      <button
+                        onClick={() => remove(n.id)}
+                        className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        aria-label="Usuń notatkę"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
@@ -204,6 +309,13 @@ export function SprintView({
       </div>
 
       <SprintReviewDialog open={reviewOpen} onOpenChange={setReviewOpen} sprint={sprint} notes={notes} />
+      <EditSprintDialog
+        open={editSprintOpen}
+        onOpenChange={setEditSprintOpen}
+        sprint={sprint}
+        onSaved={onSprintChange}
+        onDeleted={onSprintChange}
+      />
     </div>
   );
 }
