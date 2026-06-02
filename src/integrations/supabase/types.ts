@@ -18,25 +18,37 @@ export type Database = {
         Row: {
           created_at: string
           date: string
+          edited_at: string | null
           id: string
+          review_highlight: boolean
           sprint_id: string
+          status: string
           text: string
+          type: string
           user_id: string
         }
         Insert: {
           created_at?: string
           date: string
+          edited_at?: string | null
           id?: string
+          review_highlight?: boolean
           sprint_id: string
+          status?: string
           text: string
+          type?: string
           user_id: string
         }
         Update: {
           created_at?: string
           date?: string
+          edited_at?: string | null
           id?: string
+          review_highlight?: boolean
           sprint_id?: string
+          status?: string
           text?: string
+          type?: string
           user_id?: string
         }
         Relationships: [
