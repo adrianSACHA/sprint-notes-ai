@@ -546,7 +546,7 @@ export function SprintView({
         </div>
       </div>
 
-      <SprintReviewDialog open={reviewOpen} onOpenChange={setReviewOpen} sprint={sprint} notes={notes} />
+      <SprintReviewDialog open={reviewOpen} onOpenChange={setReviewOpen} sprint={sprint} notes={notes} onSprintChange={onSprintChange} />
       <EditSprintDialog
         open={editSprintOpen}
         onOpenChange={setEditSprintOpen}
