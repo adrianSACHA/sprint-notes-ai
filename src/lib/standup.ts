@@ -10,6 +10,7 @@ export type Sprint = {
   start_date: string;
   end_date: string;
   created_at: string;
+  review_summary?: string | null;
 };
 
 export type Note = {

@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, CheckCircle2, TestTube2, Loader2, AlertOctagon, Star } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Copy, Check, CheckCircle2, TestTube2, Loader2, AlertOctagon, Star, Save, Sparkles } from "lucide-react";
 import {
   buildReviewPrompt,
   buildReviewSummary,
@@ -14,17 +15,20 @@ import {
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 export function SprintReviewDialog({
   open,
   onOpenChange,
   sprint,
   notes,
+  onSprintChange,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   sprint: Sprint;
   notes: Note[];
+  onSprintChange?: () => void | Promise<void>;
 }) {
   const groups = useMemo(() => groupNotesForReview(notes), [notes]);
   const summary = useMemo(() => buildReviewSummary(sprint, notes), [sprint, notes]);
@@ -32,6 +36,27 @@ export function SprintReviewDialog({
 
   const [copiedSummary, setCopiedSummary] = useState(false);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
+  const [reviewSummary, setReviewSummary] = useState(sprint.review_summary ?? "");
+  const [savingSummary, setSavingSummary] = useState(false);
+
+  useEffect(() => {
+    setReviewSummary(sprint.review_summary ?? "");
+  }, [sprint.id, sprint.review_summary]);
+
+  async function saveReviewSummary() {
+    setSavingSummary(true);
+    const { error } = await supabase
+      .from("sprints")
+      .update({ review_summary: reviewSummary } as never)
+      .eq("id", sprint.id);
+    setSavingSummary(false);
+    if (error) {
+      toast.error("Nie udało się zapisać podsumowania");
+      return;
+    }
+    toast.success("Podsumowanie zapisane");
+    await onSprintChange?.();
+  }
 
   async function copy(text: string, which: "summary" | "prompt") {
     await navigator.clipboard.writeText(text);
@@ -128,6 +153,49 @@ export function SprintReviewDialog({
 {prompt}
           </pre>
         </section>
+
+        {/* AI-generated review summary input */}
+        <section className="mt-5">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Sparkles className="size-4 text-primary" />
+              <h3 className="text-sm font-semibold">Podsumowanie z AI</h3>
+            </div>
+            <Button
+              size="sm"
+              onClick={saveReviewSummary}
+              disabled={savingSummary || reviewSummary === (sprint.review_summary ?? "")}
+              aria-label="Zapisz podsumowanie"
+            >
+              <Save className="size-4 mr-1" />
+              {savingSummary ? "Zapisywanie..." : "Zapisz"}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mb-2 text-left">
+            Wklej tutaj podsumowanie wygenerowane przez agenta AI z powyższego promptu.
+          </p>
+          <Textarea
+            value={reviewSummary}
+            onChange={(e) => setReviewSummary(e.target.value)}
+            placeholder="Wklej tu podsumowanie sprintu wygenerowane przez ChatGPT / Claude..."
+            className="min-h-[160px] text-sm leading-relaxed"
+            aria-label="Podsumowanie sprintu z AI"
+          />
+          {sprint.review_summary && reviewSummary === sprint.review_summary && (
+            <div className="mt-2 flex items-center justify-end">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => copy(reviewSummary, "summary")}
+                aria-label="Kopiuj zapisane podsumowanie"
+              >
+                <Copy className="size-4 mr-1" />
+                Kopiuj
+              </Button>
+            </div>
+          )}
+        </section>
+
       </DialogContent>
     </Dialog>
   );
