@@ -4,9 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { defaultSprintRange } from "@/lib/standup";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export function NewSprintDialog({
   open,
@@ -32,6 +32,7 @@ export function NewSprintDialog({
       return;
     }
     setSaving(true);
+    const supabase = await getSupabaseBrowserClient();
     const { data, error } = await supabase
       .from("sprints")
       .insert({ user_id: user.id, name: name.trim(), start_date: start, end_date: end })
