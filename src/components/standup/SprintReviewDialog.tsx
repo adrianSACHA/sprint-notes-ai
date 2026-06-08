@@ -22,11 +22,13 @@ export function SprintReviewDialog({
   onOpenChange,
   sprint,
   notes,
+  onSprintChange,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   sprint: Sprint;
   notes: Note[];
+  onSprintChange?: () => void | Promise<void>;
 }) {
   const groups = useMemo(() => groupNotesForReview(notes), [notes]);
   const summary = useMemo(() => buildReviewSummary(sprint, notes), [sprint, notes]);
@@ -34,6 +36,27 @@ export function SprintReviewDialog({
 
   const [copiedSummary, setCopiedSummary] = useState(false);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
+  const [reviewSummary, setReviewSummary] = useState(sprint.review_summary ?? "");
+  const [savingSummary, setSavingSummary] = useState(false);
+
+  useEffect(() => {
+    setReviewSummary(sprint.review_summary ?? "");
+  }, [sprint.id, sprint.review_summary]);
+
+  async function saveReviewSummary() {
+    setSavingSummary(true);
+    const { error } = await supabase
+      .from("sprints")
+      .update({ review_summary: reviewSummary } as never)
+      .eq("id", sprint.id);
+    setSavingSummary(false);
+    if (error) {
+      toast.error("Nie udało się zapisać podsumowania");
+      return;
+    }
+    toast.success("Podsumowanie zapisane");
+    await onSprintChange?.();
+  }
 
   async function copy(text: string, which: "summary" | "prompt") {
     await navigator.clipboard.writeText(text);
