@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, CheckCircle2, TestTube2, Loader2, AlertOctagon, Star } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Copy, Check, CheckCircle2, TestTube2, Loader2, AlertOctagon, Star, Save, Sparkles } from "lucide-react";
 import {
   buildReviewPrompt,
   buildReviewSummary,
@@ -14,6 +15,7 @@ import {
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 export function SprintReviewDialog({
   open,
