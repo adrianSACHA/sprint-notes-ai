@@ -3,9 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Sprint } from "@/lib/standup";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export function EditSprintDialog({
   open,
@@ -41,6 +41,7 @@ export function EditSprintDialog({
       return;
     }
     setSaving(true);
+    const supabase = await getSupabaseBrowserClient();
     const { error } = await supabase
       .from("sprints")
       .update({ name: name.trim(), start_date: start, end_date: end })
@@ -58,6 +59,7 @@ export function EditSprintDialog({
   async function remove() {
     if (!confirm(`Usunąć sprint "${sprint.name}" wraz ze wszystkimi notatkami?`)) return;
     setDeleting(true);
+    const supabase = await getSupabaseBrowserClient();
     await supabase.from("notes").delete().eq("sprint_id", sprint.id);
     const { error } = await supabase.from("sprints").delete().eq("id", sprint.id);
     setDeleting(false);
