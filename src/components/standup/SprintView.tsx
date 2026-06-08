@@ -23,11 +23,11 @@ import {
   type NoteType,
   type Sprint,
 } from "@/lib/standup";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { SprintReviewDialog } from "./SprintReviewDialog";
 import { EditSprintDialog } from "./EditSprintDialog";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 const TYPE_STYLES: Record<NoteType, string> = {
   task: "bg-sky-500/15 text-sky-300 border-sky-500/30",
@@ -117,6 +117,7 @@ export function SprintView({
       return;
     }
     setSubmitting(true);
+    const supabase = await getSupabaseBrowserClient();
     const { error } = await supabase.from("notes").insert({
       user_id: user.id,
       sprint_id: sprint.id,
@@ -138,12 +139,14 @@ export function SprintView({
   }
 
   async function remove(id: string) {
+    const supabase = await getSupabaseBrowserClient();
     const { error } = await supabase.from("notes").delete().eq("id", id);
     if (error) return toast.error(error.message);
     onNotesChange();
   }
 
   async function patchNote(id: string, patch: Partial<Pick<Note, "status" | "type" | "review_highlight">>) {
+    const supabase = await getSupabaseBrowserClient();
     const { error } = await supabase.from("notes").update(patch).eq("id", id);
     if (error) return toast.error(error.message);
     onNotesChange();
@@ -162,6 +165,7 @@ export function SprintView({
     if (!trimmed) return toast.error("Notatka nie może być pusta");
     if (trimmed.length > 500) return toast.error("Maksymalnie 500 znaków");
     setEditSaving(true);
+    const supabase = await getSupabaseBrowserClient();
     const { error } = await supabase.from("notes").update({ text: trimmed }).eq("id", id);
     setEditSaving(false);
     if (error) return toast.error(error.message);

@@ -15,7 +15,7 @@ import {
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export function SprintReviewDialog({
   open,
@@ -45,6 +45,7 @@ export function SprintReviewDialog({
 
   async function saveReviewSummary() {
     setSavingSummary(true);
+    const supabase = await getSupabaseBrowserClient();
     const { error } = await supabase
       .from("sprints")
       .update({ review_summary: reviewSummary } as never)

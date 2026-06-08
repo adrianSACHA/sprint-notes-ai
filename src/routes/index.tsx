@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
 import { Sidebar } from "@/components/standup/Sidebar";
 import { SprintView } from "@/components/standup/SprintView";
 import { NewSprintDialog } from "@/components/standup/NewSprintDialog";
@@ -10,6 +9,7 @@ import { Plus } from "lucide-react";
 import { sprintWeeks, type Note, type Sprint } from "@/lib/standup";
 import { Toaster } from "@/components/ui/sonner";
 import { isSameDay, parseISO } from "date-fns";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export const Route = createFileRoute("/")({
   component: () => (
@@ -43,6 +43,7 @@ function App() {
 
   const loadSprints = useCallback(async () => {
     if (!user) return;
+    const supabase = await getSupabaseBrowserClient();
     const { data } = await supabase
       .from("sprints")
       .select("*")
@@ -52,6 +53,7 @@ function App() {
 
   const loadAllNotes = useCallback(async () => {
     if (!user) return;
+    const supabase = await getSupabaseBrowserClient();
     const { data } = await supabase.from("notes").select("*");
     setNotes((data as Note[]) ?? []);
   }, [user]);
