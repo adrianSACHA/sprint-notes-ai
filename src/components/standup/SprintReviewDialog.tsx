@@ -153,6 +153,49 @@ export function SprintReviewDialog({
 {prompt}
           </pre>
         </section>
+
+        {/* AI-generated review summary input */}
+        <section className="mt-5">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Sparkles className="size-4 text-primary" />
+              <h3 className="text-sm font-semibold">Podsumowanie z AI</h3>
+            </div>
+            <Button
+              size="sm"
+              onClick={saveReviewSummary}
+              disabled={savingSummary || reviewSummary === (sprint.review_summary ?? "")}
+              aria-label="Zapisz podsumowanie"
+            >
+              <Save className="size-4 mr-1" />
+              {savingSummary ? "Zapisywanie..." : "Zapisz"}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mb-2 text-left">
+            Wklej tutaj podsumowanie wygenerowane przez agenta AI z powyższego promptu.
+          </p>
+          <Textarea
+            value={reviewSummary}
+            onChange={(e) => setReviewSummary(e.target.value)}
+            placeholder="Wklej tu podsumowanie sprintu wygenerowane przez ChatGPT / Claude..."
+            className="min-h-[160px] text-sm leading-relaxed"
+            aria-label="Podsumowanie sprintu z AI"
+          />
+          {sprint.review_summary && reviewSummary === sprint.review_summary && (
+            <div className="mt-2 flex items-center justify-end">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => copy(reviewSummary, "summary")}
+                aria-label="Kopiuj zapisane podsumowanie"
+              >
+                <Copy className="size-4 mr-1" />
+                Kopiuj
+              </Button>
+            </div>
+          )}
+        </section>
+
       </DialogContent>
     </Dialog>
   );
