@@ -67,6 +67,7 @@ export type Database = {
           end_date: string
           id: string
           name: string
+          review_summary: string | null
           start_date: string
           user_id: string
         }
@@ -75,6 +76,7 @@ export type Database = {
           end_date: string
           id?: string
           name: string
+          review_summary?: string | null
           start_date: string
           user_id: string
         }
@@ -83,6 +85,7 @@ export type Database = {
           end_date?: string
           id?: string
           name?: string
+          review_summary?: string | null
           start_date?: string
           user_id?: string
         }
