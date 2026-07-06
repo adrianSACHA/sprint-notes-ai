@@ -176,35 +176,8 @@ export function Sidebar({
         })}
       </div>
 
-      {/* Week nav */}
-      {selectedId && weeks > 1 && !collapsed && (
-        <div className="px-3 py-3 border-t border-sidebar-border">
-          <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Tydzień</div>
-          <div className="flex items-center justify-between gap-2">
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => onWeekChange(Math.max(0, currentWeek - 1))}
-              disabled={currentWeek === 0}
-              className="size-8"
-            >
-              <ChevronLeft className="size-4" />
-            </Button>
-            <span className="text-sm">
-              {currentWeek + 1} / {weeks}
-            </span>
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => onWeekChange(Math.min(weeks - 1, currentWeek + 1))}
-              disabled={currentWeek === weeks - 1}
-              className="size-8"
-            >
-              <ChevronRight className="size-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+
+
 
       {/* Footer buttons */}
       <div
