@@ -89,12 +89,43 @@ export function Sidebar({
         )}
       </div>
 
+      {/* Week nav — above sprints list */}
+      {selectedId && weeks > 1 && !collapsed && (
+        <div className="px-3 pt-3 pb-1">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Tydzień</div>
+          <div className="flex items-center justify-between gap-2">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => onWeekChange(Math.max(0, currentWeek - 1))}
+              disabled={currentWeek === 0}
+              className="size-8"
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+            <span className="text-sm">
+              {currentWeek + 1} / {weeks}
+            </span>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => onWeekChange(Math.min(weeks - 1, currentWeek + 1))}
+              disabled={currentWeek === weeks - 1}
+              className="size-8"
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Sprints list */}
       {!collapsed && (
         <div className="px-3 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Sprinty
         </div>
       )}
+
       <div className="flex-1 overflow-y-auto px-2 space-y-1">
         {sprints.length === 0 && (
           <div className={cn("text-sm text-muted-foreground", collapsed ? "px-1 py-1 text-center" : "px-2 py-1")}>
@@ -145,35 +176,8 @@ export function Sidebar({
         })}
       </div>
 
-      {/* Week nav */}
-      {selectedId && weeks > 1 && !collapsed && (
-        <div className="px-3 py-3 border-t border-sidebar-border">
-          <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Tydzień</div>
-          <div className="flex items-center justify-between gap-2">
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => onWeekChange(Math.max(0, currentWeek - 1))}
-              disabled={currentWeek === 0}
-              className="size-8"
-            >
-              <ChevronLeft className="size-4" />
-            </Button>
-            <span className="text-sm">
-              {currentWeek + 1} / {weeks}
-            </span>
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => onWeekChange(Math.min(weeks - 1, currentWeek + 1))}
-              disabled={currentWeek === weeks - 1}
-              className="size-8"
-            >
-              <ChevronRight className="size-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+
+
 
       {/* Footer buttons */}
       <div

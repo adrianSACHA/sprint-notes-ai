@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Send, Trash2, FileText, Pencil, Check, X, Star, Filter } from "lucide-react";
+import { Send, Trash2, FileText, Pencil, Check, X, Star, Filter, CalendarDays, NotebookPen, CalendarRange } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isSameDay, parseISO } from "date-fns";
 import {
@@ -205,8 +205,8 @@ export function SprintView({
     <div className="flex-1 flex flex-col h-screen min-w-0">
       {/* Header */}
       <header className="px-8 py-5 border-b border-border flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-xl font-semibold tracking-tight truncate">{sprint.name}</h1>
             <button
               onClick={() => setEditSprintOpen(true)}
@@ -216,6 +216,25 @@ export function SprintView({
             >
               <Pencil className="size-4" />
             </button>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground ml-1">
+              <span className="inline-flex items-center gap-1.5" title="Dni z notatkami">
+                <CalendarDays className="size-3.5" />
+                <span className="tabular-nums font-medium text-foreground">{daysWithNotes(notes)}</span>
+                <span>dni</span>
+              </span>
+              <span className="text-border">·</span>
+              <span className="inline-flex items-center gap-1.5" title="Notatek łącznie">
+                <NotebookPen className="size-3.5" />
+                <span className="tabular-nums font-medium text-foreground">{notes.length}</span>
+                <span>notatek</span>
+              </span>
+              <span className="text-border">·</span>
+              <span className="inline-flex items-center gap-1.5" title="Tygodnie sprintu">
+                <CalendarRange className="size-3.5" />
+                <span className="tabular-nums font-medium text-foreground">{weeks.length}</span>
+                <span>tyg.</span>
+              </span>
+            </div>
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">
             {format(parseISO(sprint.start_date), "d MMM")} – {format(parseISO(sprint.end_date), "d MMM yyyy")}
@@ -227,12 +246,6 @@ export function SprintView({
         </Button>
       </header>
 
-      {/* Stats */}
-      <div className="px-8 py-4 flex gap-3 flex-wrap border-b border-border">
-        <Stat label="Dni z notatkami" value={daysWithNotes(notes)} />
-        <Stat label="Notatek łącznie" value={notes.length} />
-        <Stat label="Tygodnie sprintu" value={weeks.length} />
-      </div>
 
       {/* Day tabs */}
       <div className="px-8 py-3 flex gap-1.5 border-b border-border overflow-x-auto">
