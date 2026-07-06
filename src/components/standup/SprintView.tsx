@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Send, Trash2, FileText, Pencil, Check, X, Star, Filter } from "lucide-react";
+import { Send, Trash2, FileText, Pencil, Check, X, Star, Filter, CalendarDays, NotebookPen, CalendarRange } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isSameDay, parseISO } from "date-fns";
 import {
