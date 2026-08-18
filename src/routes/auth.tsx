@@ -124,7 +124,7 @@ function AuthPage() {
           <div className="flex gap-1 mb-5 p-1 rounded-md bg-secondary">
             <button
               type="button"
-              onClick={() => setMode("signin")}
+              onClick={() => switchMode("signin")}
               className={`flex-1 px-3 py-1.5 text-sm rounded ${
                 mode === "signin" ? "bg-background text-foreground" : "text-muted-foreground"
               }`}
@@ -133,7 +133,7 @@ function AuthPage() {
             </button>
             <button
               type="button"
-              onClick={() => setMode("signup")}
+              onClick={() => switchMode("signup")}
               className={`flex-1 px-3 py-1.5 text-sm rounded ${
                 mode === "signup" ? "bg-background text-foreground" : "text-muted-foreground"
               }`}
@@ -142,7 +142,30 @@ function AuthPage() {
             </button>
           </div>
 
+          {authError && (
+            <div
+              role="alert"
+              className="mb-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2.5 flex gap-2"
+            >
+              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0 text-destructive" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-destructive">{authError.title}</p>
+                <p className="text-xs text-muted-foreground">{authError.hint}</p>
+                {authError.offerSignup && mode === "signin" && (
+                  <button
+                    type="button"
+                    onClick={() => switchMode("signup")}
+                    className="text-xs underline text-foreground"
+                  >
+                    Utwórz konto dla {email.trim() || "tego adresu"}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           <form onSubmit={submit} className="space-y-4">
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
