@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, AlertCircle } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
   component: () => (
@@ -15,6 +15,64 @@ export const Route = createFileRoute("/auth")({
   ),
 });
 
+function mapAuthError(raw: string, mode: "signin" | "signup") {
+  const m = raw.toLowerCase();
+  if (m.includes("invalid login credentials")) {
+    return {
+      title: "Błędny e-mail lub hasło",
+      hint: "Sprawdź pisownię e-maila i wielkość liter w haśle. Jeśli nie masz jeszcze konta, przejdź do zakładki Rejestracja.",
+      offerSignup: true,
+    };
+  }
+  if (m.includes("email not confirmed")) {
+    return {
+      title: "Konto nie zostało potwierdzone",
+      hint: "Sprawdź skrzynkę e-mail i kliknij link potwierdzający, a potem zaloguj się ponownie.",
+      offerSignup: false,
+    };
+  }
+  if (m.includes("already registered") || m.includes("already exists") || m.includes("user already")) {
+    return {
+      title: "Konto z tym e-mailem już istnieje",
+      hint: "Przejdź do zakładki Zaloguj i użyj swojego hasła.",
+      offerSignup: false,
+    };
+  }
+  if (m.includes("password") && (m.includes("least") || m.includes("short") || m.includes("weak"))) {
+    return {
+      title: "Hasło jest za słabe",
+      hint: "Użyj co najmniej 6 znaków — najlepiej z cyfrą i znakiem specjalnym.",
+      offerSignup: false,
+    };
+  }
+  if (m.includes("invalid email") || m.includes("email address") || m.includes("validate email")) {
+    return {
+      title: "Nieprawidłowy adres e-mail",
+      hint: "Podaj pełny adres w formacie nazwa@domena.pl.",
+      offerSignup: false,
+    };
+  }
+  if (m.includes("rate limit") || m.includes("too many")) {
+    return {
+      title: "Za dużo prób",
+      hint: "Odczekaj chwilę i spróbuj ponownie.",
+      offerSignup: false,
+    };
+  }
+  if (m.includes("failed to fetch") || m.includes("network")) {
+    return {
+      title: "Brak połączenia z serwerem",
+      hint: "Sprawdź internet i spróbuj ponownie za moment.",
+      offerSignup: false,
+    };
+  }
+  return {
+    title: mode === "signin" ? "Nie udało się zalogować" : "Nie udało się utworzyć konta",
+    hint: raw,
+    offerSignup: false,
+  };
+}
+
 function AuthPage() {
   const { session, signIn, signUp, loading } = useAuth();
   const navigate = useNavigate();
@@ -23,24 +81,34 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [authError, setAuthError] = useState<ReturnType<typeof mapAuthError> | null>(null);
 
   useEffect(() => {
     if (!loading && session) navigate({ to: "/" });
   }, [session, loading, navigate]);
 
+  function switchMode(next: "signin" | "signup") {
+    setMode(next);
+    setAuthError(null);
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
+    setAuthError(null);
     const fn = mode === "signin" ? signIn : signUp;
-    const { error } = await fn(email, password);
+    const { error } = await fn(email.trim(), password);
     setBusy(false);
     if (error) {
-      toast.error(error);
+      const mapped = mapAuthError(error, mode);
+      setAuthError(mapped);
+      toast.error(mapped.title);
       return;
     }
     if (mode === "signup") toast.success("Konto utworzone");
     navigate({ to: "/" });
   }
+
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-background">
@@ -56,7 +124,7 @@ function AuthPage() {
           <div className="flex gap-1 mb-5 p-1 rounded-md bg-secondary">
             <button
               type="button"
-              onClick={() => setMode("signin")}
+              onClick={() => switchMode("signin")}
               className={`flex-1 px-3 py-1.5 text-sm rounded ${
                 mode === "signin" ? "bg-background text-foreground" : "text-muted-foreground"
               }`}
@@ -65,7 +133,7 @@ function AuthPage() {
             </button>
             <button
               type="button"
-              onClick={() => setMode("signup")}
+              onClick={() => switchMode("signup")}
               className={`flex-1 px-3 py-1.5 text-sm rounded ${
                 mode === "signup" ? "bg-background text-foreground" : "text-muted-foreground"
               }`}
@@ -74,7 +142,30 @@ function AuthPage() {
             </button>
           </div>
 
+          {authError && (
+            <div
+              role="alert"
+              className="mb-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2.5 flex gap-2"
+            >
+              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0 text-destructive" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-destructive">{authError.title}</p>
+                <p className="text-xs text-muted-foreground">{authError.hint}</p>
+                {authError.offerSignup && mode === "signin" && (
+                  <button
+                    type="button"
+                    onClick={() => switchMode("signup")}
+                    className="text-xs underline text-foreground"
+                  >
+                    Utwórz konto dla {email.trim() || "tego adresu"}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           <form onSubmit={submit} className="space-y-4">
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
