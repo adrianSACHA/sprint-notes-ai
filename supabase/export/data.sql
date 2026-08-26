@@ -1,6 +1,6 @@
 -- StandupLog: eksport danych (7 sprintów, 257 notatek)
 -- Uruchom PO schema.sql. Podmien ponizej UUID starego konta na swoje nowe user_id.
-\set old_user 'cc31c8e6-8710-4b7b-b5e8-2af25f112de8'
+-- Stare user_id (do podmiany): cc31c8e6-8710-4b7b-b5e8-2af25f112de8
 
 INSERT INTO public.sprints (id,user_id,name,start_date,end_date,created_at,review_summary) VALUES ('d8068207-85ac-41bd-8631-6881f7795af1','cc31c8e6-8710-4b7b-b5e8-2af25f112de8','10','2026-05-11','2026-05-22','2026-05-21T10:18:40.888404+00:00',NULL);
 INSERT INTO public.sprints (id,user_id,name,start_date,end_date,created_at,review_summary) VALUES ('b50df56a-a41f-4038-84d2-720af1b1ce2e','cc31c8e6-8710-4b7b-b5e8-2af25f112de8','11','2026-05-25','2026-06-05','2026-05-25T07:19:20.382565+00:00','### SSS  
