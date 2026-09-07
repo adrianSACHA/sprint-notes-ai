@@ -1,19 +1,11 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { useAuth, AuthProvider } from "@/hooks/useAuth";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
-
-export const Route = createFileRoute("/auth")({
-  component: () => (
-    <AuthProvider>
-      <AuthPage />
-    </AuthProvider>
-  ),
-});
 
 function mapAuthError(raw: string, mode: "signin" | "signup") {
   const m = raw.toLowerCase();
@@ -73,8 +65,8 @@ function mapAuthError(raw: string, mode: "signin" | "signup") {
   };
 }
 
-function AuthPage() {
-  const { session, signIn, signUp, loading } = useAuth();
+export function AuthPage() {
+  const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -82,10 +74,6 @@ function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [authError, setAuthError] = useState<ReturnType<typeof mapAuthError> | null>(null);
-
-  useEffect(() => {
-    if (!loading && session) navigate({ to: "/" });
-  }, [session, loading, navigate]);
 
   function switchMode(next: "signin" | "signup") {
     setMode(next);
@@ -106,9 +94,8 @@ function AuthPage() {
       return;
     }
     if (mode === "signup") toast.success("Konto utworzone");
-    navigate({ to: "/" });
+    navigate("/");
   }
-
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-background">
@@ -165,7 +152,6 @@ function AuthPage() {
           )}
 
           <form onSubmit={submit} className="space-y-4">
-
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input

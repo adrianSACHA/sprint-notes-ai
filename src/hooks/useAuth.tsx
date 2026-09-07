@@ -20,7 +20,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
 
-    getSupabaseBrowserClient().then((supabase) => {
+    const supabase = getSupabaseBrowserClient();
       const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
         setSession(s);
         setLoading(false);
@@ -30,8 +30,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(data.session);
         setLoading(false);
       });
-    });
-
     return () => unsubscribe?.();
   }, []);
 
@@ -40,12 +38,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user: session?.user ?? null,
     loading,
     async signIn(email, password) {
-      const supabase = await getSupabaseBrowserClient();
+      const supabase = getSupabaseBrowserClient();
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       return { error: error?.message ?? null };
     },
     async signUp(email, password) {
-      const supabase = await getSupabaseBrowserClient();
+      const supabase = getSupabaseBrowserClient();
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -54,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: error?.message ?? null };
     },
     async signOut() {
-      const supabase = await getSupabaseBrowserClient();
+      const supabase = getSupabaseBrowserClient();
       await supabase.auth.signOut();
     },
   };
@@ -67,3 +65,4 @@ export function useAuth() {
   if (!v) throw new Error("useAuth must be used inside AuthProvider");
   return v;
 }
+

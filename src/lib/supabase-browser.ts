@@ -1,8 +1,7 @@
-export async function getSupabaseBrowserClient() {
-  if (typeof window === "undefined") {
-    throw new Error("Backend browser client is only available in the browser");
-  }
+import { supabase } from "@/lib/supabase";
 
-  const { supabase } = await import("@/integrations/supabase/client");
+// SPA-only: Supabase runs entirely in the browser and is guarded by RLS,
+// so this resolves to the single browser client defined in src/lib/supabase.ts.
+export function getSupabaseBrowserClient() {
   return supabase;
 }
