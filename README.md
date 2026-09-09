@@ -148,13 +148,44 @@ The generated prompt should be in Polish and follow this structure:
 
 This project was built with [Lovable](https://lovable.dev).
 
-## Build with Lovable
+## Local development & environment
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/75ef6e99-d214-42f2-959f-4c253355a524).
+The app is a standard Vite + React SPA (React Router with `HashRouter`) that talks to Supabase entirely in the browser (guarded by RLS).
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+Create a local `.env` (git-ignored) with:
+
+```env
+VITE_SUPABASE_URL=https://<your-ref>.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=<anon / publishable key>
+```
+
+The SPA only needs those two `VITE_*` values (the anon key is intentionally public), read at build time via `import.meta.env`.
+
+```sh
+npm install
+npm run dev      # local dev server
+npm run build    # production build -> dist/
+npx tsc --noEmit # type-check
+```
+
+## Build & deployment (GitHub Pages)
+
+`.github/workflows/deploy-pages.yml` builds and publishes `dist/` to GitHub Pages on every push to `main`.
+
+- Repo → **Settings → Pages**: Source = **GitHub Actions**.
+- Repo → **Settings → Secrets and variables → Actions**:
+  - **Variable** `VITE_SUPABASE_URL` = `https://<your-ref>.supabase.co`
+  - **Secret** `VITE_SUPABASE_PUBLISHABLE_KEY` = `<anon key>`
+- Vite `base` is `/sprint-notes-ai/` so assets resolve under `<user>.github.io/sprint-notes-ai/` (used together with `HashRouter`, no SPA rewrites needed).
+
+Live URL: https://adrianSACHA.github.io/sprint-notes-ai/
+
+## Supabase setup (one-time)
+
+1. Create the schema (tables + RLS) from `supabase/export/schema.sql`.
+2. Enable the Email provider: **Authentication → Providers → Email**.
+3. Set **Authentication → URL Configuration → Site URL** to the app URL.
+4. Load data (optional) from `supabase/export/data.sql`, adjusting `user_id` to your account.
 
 ## Development
 
