@@ -156,19 +156,15 @@ export function Sidebar({
                     {noteCounts[s.id] ?? 0}
                   </Badge>
                 </>
-              ) : (
+                            ) : (
                 <span
+                  title={s.name}
                   className={cn(
-                    "flex items-center justify-center rounded-md text-[10px] font-semibold h-8 w-8",
+                    "flex items-center justify-center rounded-md text-[11px] font-bold h-8 min-w-8 px-1 tabular-nums",
                     active ? "bg-sidebar-accent text-sidebar-accent-foreground" : "bg-sidebar-accent/40 text-sidebar-foreground"
                   )}
                 >
-                  {s.name
-                    .split(" ")
-                    .map((w) => w[0])
-                    .join("")
-                    .slice(0, 2)
-                    .toUpperCase()}
+                  {s.name.trim() || "·"}
                 </span>
               )}
             </button>
