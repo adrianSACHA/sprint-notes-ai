@@ -5,8 +5,8 @@ import { SprintView } from "@/components/standup/SprintView";
 import { NewSprintDialog } from "@/components/standup/NewSprintDialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { sprintWeeks, type Note, type Sprint } from "@/lib/standup";
-import { isSameDay, parseISO } from "date-fns";
+import { type Note, type Sprint } from "@/lib/standup";
+import { parseISO } from "date-fns";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export function StandupHome() {
@@ -14,7 +14,6 @@ export function StandupHome() {
   const [sprints, setSprints] = useState<Sprint[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [currentWeek, setCurrentWeek] = useState(0);
   const [newOpen, setNewOpen] = useState(false);
   const [bootstrapping, setBootstrapping] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -57,16 +56,6 @@ export function StandupHome() {
     setSelectedId((active ?? sprints[0]).id);
   }, [sprints, selectedId]);
 
-  // Reset week when sprint changes — pick week containing today if possible
-  useEffect(() => {
-    if (!selectedId) return;
-    const sprint = sprints.find((s) => s.id === selectedId);
-    if (!sprint) return;
-    const weeks = sprintWeeks(sprint);
-    const todayIdx = weeks.findIndex((w) => w.some((d) => isSameDay(d, new Date())));
-    setCurrentWeek(todayIdx >= 0 ? todayIdx : 0);
-  }, [selectedId, sprints]);
-
   const noteCounts = useMemo(() => {
     const m: Record<string, number> = {};
     for (const n of notes) m[n.sprint_id] = (m[n.sprint_id] ?? 0) + 1;
@@ -78,8 +67,6 @@ export function StandupHome() {
     () => (selectedId ? notes.filter((n) => n.sprint_id === selectedId) : []),
     [notes, selectedId]
   );
-
-  const weeks = selectedSprint ? sprintWeeks(selectedSprint).length : 0;
 
   if (bootstrapping) {
     return <div className="min-h-screen grid place-items-center text-sm text-muted-foreground">Ładowanie...</div>;
@@ -93,9 +80,6 @@ export function StandupHome() {
         onSelect={setSelectedId}
         noteCounts={noteCounts}
         onNewSprint={() => setNewOpen(true)}
-        weeks={weeks}
-        currentWeek={currentWeek}
-        onWeekChange={setCurrentWeek}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
       />
@@ -104,7 +88,6 @@ export function StandupHome() {
         <SprintView
           sprint={selectedSprint}
           notes={sprintNotes}
-          currentWeek={currentWeek}
           onNotesChange={loadAllNotes}
           onSprintChange={async () => {
             await Promise.all([loadSprints(), loadAllNotes()]);

@@ -60,6 +60,28 @@ export function sprintWeeks(sprint: Sprint): Date[][] {
   return weeks;
 }
 
+/**
+ * All workdays (Mon–Fri) covered by the sprint, in chronological order,
+ * each tagged with the week index it belongs to. Range is clamped to the
+ * sprint's start/end dates.
+ */
+export function sprintDays(sprint: Sprint): { date: Date; week: number }[] {
+  const start = parseISO(sprint.start_date);
+  const end = parseISO(sprint.end_date);
+  const firstMonday = startOfWeek(start, { weekStartsOn: 1 });
+  const out: { date: Date; week: number }[] = [];
+  let cursor = start;
+  while (cursor <= end) {
+    const dow = cursor.getDay(); // 0 = Sun, 6 = Sat
+    if (dow >= 1 && dow <= 5) {
+      const week = Math.floor(differenceInCalendarDays(cursor, firstMonday) / 7);
+      out.push({ date: cursor, week });
+    }
+    cursor = addDays(cursor, 1);
+  }
+  return out;
+}
+
 export function weeksCount(sprint: Sprint): number {
   return sprintWeeks(sprint).length;
 }

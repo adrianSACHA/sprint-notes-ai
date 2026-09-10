@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, ChevronLeft, ChevronRight, LogOut, Moon, Sun, PanelLeft, PanelRight } from "lucide-react";
+import { Plus, LogOut, Moon, Sun, PanelLeft, PanelRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Sprint } from "@/lib/standup";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,9 +12,6 @@ export function Sidebar({
   onSelect,
   noteCounts,
   onNewSprint,
-  weeks,
-  currentWeek,
-  onWeekChange,
   collapsed,
   onToggleCollapse,
 }: {
@@ -23,9 +20,6 @@ export function Sidebar({
   onSelect: (id: string) => void;
   noteCounts: Record<string, number>;
   onNewSprint: () => void;
-  weeks: number;
-  currentWeek: number;
-  onWeekChange: (i: number) => void;
   collapsed: boolean;
   onToggleCollapse: () => void;
 }) {
@@ -89,36 +83,6 @@ export function Sidebar({
         )}
       </div>
 
-      {/* Week nav — above sprints list */}
-      {selectedId && weeks > 1 && !collapsed && (
-        <div className="px-3 pt-3 pb-1">
-          <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Tydzień</div>
-          <div className="flex items-center justify-between gap-2">
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => onWeekChange(Math.max(0, currentWeek - 1))}
-              disabled={currentWeek === 0}
-              className="size-8"
-            >
-              <ChevronLeft className="size-4" />
-            </Button>
-            <span className="text-sm">
-              {currentWeek + 1} / {weeks}
-            </span>
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => onWeekChange(Math.min(weeks - 1, currentWeek + 1))}
-              disabled={currentWeek === weeks - 1}
-              className="size-8"
-            >
-              <ChevronRight className="size-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-
       {/* Sprints list */}
       {!collapsed && (
         <div className="px-3 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -156,7 +120,7 @@ export function Sidebar({
                     {noteCounts[s.id] ?? 0}
                   </Badge>
                 </>
-                            ) : (
+              ) : (
                 <span
                   title={s.name}
                   className={cn(
@@ -171,9 +135,6 @@ export function Sidebar({
           );
         })}
       </div>
-
-
-
 
       {/* Footer buttons */}
       <div
