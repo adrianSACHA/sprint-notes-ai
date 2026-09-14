@@ -22,9 +22,33 @@ export type Note = {
   created_at: string;
   type: NoteType;
   status: NoteStatus;
-  review_highlight: boolean;
+    review_highlight: boolean;
   edited_at: string | null;
 };
+
+/**
+ * Shared note filters. Kept here so both the sidebar (controls) and the
+ * sprint view (which applies them) work with the same shape.
+ */
+export type NoteFilters = {
+  type: NoteType | "all";
+  status: NoteStatus | "all";
+  highlight: "all" | "yes";
+};
+
+export const DEFAULT_FILTERS: NoteFilters = { type: "all", status: "all", highlight: "all" };
+
+export function filtersActive(f: NoteFilters): boolean {
+  return f.type !== "all" || f.status !== "all" || f.highlight !== "all";
+}
+
+export function activeFilterCount(f: NoteFilters): number {
+  return (
+    (f.type !== "all" ? 1 : 0) +
+    (f.status !== "all" ? 1 : 0) +
+    (f.highlight !== "all" ? 1 : 0)
+  );
+}
 
 export const NOTE_TYPES: { value: NoteType; label: string; short: string }[] = [
   { value: "task", label: "Zadanie", short: "TASK" },

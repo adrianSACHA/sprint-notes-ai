@@ -17,11 +17,9 @@ import {
   Check,
   X,
   Star,
-  Filter,
   CalendarDays,
   NotebookPen,
   CalendarRange,
-  SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isSameDay, parseISO } from "date-fns";
@@ -30,9 +28,11 @@ import {
   sprintDays,
   sprintWeeks,
   daysWithNotes,
+  filtersActive,
   NOTE_TYPES,
   NOTE_STATUSES,
   type Note,
+  type NoteFilters,
   type NoteStatus,
   type NoteType,
   type Sprint,
@@ -63,11 +63,13 @@ const STATUS_STYLES: Record<NoteStatus, string> = {
 export function SprintView({
   sprint,
   notes,
+  filters,
   onNotesChange,
   onSprintChange,
 }: {
   sprint: Sprint;
   notes: Note[];
+  filters: NoteFilters;
   onNotesChange: () => void;
   onSprintChange: () => void;
 }) {
@@ -91,37 +93,21 @@ export function SprintView({
 
   const dayHasNotes = useMemo(() => new Set(notes.map((n) => n.date)), [notes]);
 
-  // Filters
-  const [filterType, setFilterType] = useState<NoteType | "all">("all");
-  const [filterStatus, setFilterStatus] = useState<NoteStatus | "all">("all");
-  const [filterHighlight, setFilterHighlight] = useState<"all" | "yes">("all");
-  const [panelOpen, setPanelOpen] = useState(true);
+  const isFiltered = filtersActive(filters);
 
   const dayNotes = useMemo(() => {
     return notes
       .filter((n) => n.date === selectedDate)
-      .filter((n) => (filterType === "all" ? true : n.type === filterType))
-      .filter((n) => (filterStatus === "all" ? true : n.status === filterStatus))
-      .filter((n) => (filterHighlight === "yes" ? n.review_highlight : true))
+      .filter((n) => (filters.type === "all" ? true : n.type === filters.type))
+      .filter((n) => (filters.status === "all" ? true : n.status === filters.status))
+      .filter((n) => (filters.highlight === "yes" ? n.review_highlight : true))
       .sort((a, b) => a.created_at.localeCompare(b.created_at));
-  }, [notes, selectedDate, filterType, filterStatus, filterHighlight]);
-
-  const filtersActive = filterType !== "all" || filterStatus !== "all" || filterHighlight !== "all";
-  const activeFilterCount =
-    (filterType !== "all" ? 1 : 0) +
-    (filterStatus !== "all" ? 1 : 0) +
-    (filterHighlight !== "all" ? 1 : 0);
+  }, [notes, selectedDate, filters]);
 
   const dayRawCount = useMemo(
     () => notes.filter((n) => n.date === selectedDate).length,
     [notes, selectedDate]
   );
-
-  function clearFilters() {
-    setFilterType("all");
-    setFilterStatus("all");
-    setFilterHighlight("all");
-  }
 
   // Composer
   const [text, setText] = useState("");
@@ -271,27 +257,6 @@ export function SprintView({
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => setPanelOpen((v) => !v)}
-              aria-pressed={panelOpen}
-              aria-label="Pokaż lub ukryj panel filtrów"
-              title="Pokaż lub ukryj panel filtrów"
-              className={cn(
-                "h-9 px-3 rounded-md text-sm inline-flex items-center gap-1.5 border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                panelOpen
-                  ? "bg-accent border-border text-foreground"
-                  : "border-border text-muted-foreground hover:bg-accent"
-              )}
-            >
-              <SlidersHorizontal className="size-4" />
-              Filtry
-              {activeFilterCount > 0 && (
-                <span className="ml-0.5 rounded-full bg-primary text-primary-foreground text-[10px] leading-none px-1.5 py-0.5">
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
             <Button variant="secondary" onClick={() => setReviewOpen(true)} aria-label="Otwórz Sprint Review">
               <FileText className="size-4 mr-1.5" />
               Sprint Review
@@ -336,9 +301,17 @@ export function SprintView({
 
         {/* Notes list */}
         <div className="flex-1 overflow-y-auto px-8 py-6">
+          <div className="flex items-center justify-between mb-3 max-w-3xl">
+            <h2 className="text-sm font-medium capitalize">
+              {format(parseISO(selectedDate), "EEEE, d MMM")}
+            </h2>
+            <span className="text-xs text-muted-foreground">
+              {isFiltered ? `${dayNotes.length} z ${dayRawCount} (filtry)` : `${dayRawCount} notatek`}
+            </span>
+          </div>
           {dayNotes.length === 0 ? (
             <div className="text-sm text-muted-foreground">
-              {filtersActive ? "Brak notatek pasujących do filtrów." : "Brak notatek – wpisz co robiłeś"}
+              {isFiltered ? "Brak notatek pasujących do filtrów." : "Brak notatek – wpisz co robiłeś"}
             </div>
           ) : (
             <ul className="space-y-2 max-w-3xl">
@@ -555,114 +528,6 @@ export function SprintView({
           </div>
         </div>
       </div>
-
-      {/* Right panel — filters + stats (collapsible) */}
-      {panelOpen && (
-        <aside className="w-72 shrink-0 border-l border-border bg-sidebar/40 flex flex-col h-screen overflow-y-auto">
-          <div className="px-5 py-4 border-b border-border flex items-center justify-between">
-            <div className="inline-flex items-center gap-2 text-sm font-medium">
-              <Filter className="size-4 text-muted-foreground" />
-              Filtry
-            </div>
-            <button
-              onClick={() => setPanelOpen(false)}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label="Zamknij panel filtrów"
-              title="Zamknij panel"
-            >
-              <X className="size-4" />
-            </button>
-          </div>
-
-          {/* Stats */}
-          <div className="px-5 py-4 border-b border-border space-y-2.5">
-            <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Podsumowanie</div>
-            <div className="grid grid-cols-3 gap-2">
-              <div className="rounded-md bg-card px-2.5 py-2">
-                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Notatki</div>
-                <div className="text-lg font-semibold tabular-nums">{notes.length}</div>
-              </div>
-              <div className="rounded-md bg-card px-2.5 py-2">
-                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Dni</div>
-                <div className="text-lg font-semibold tabular-nums">{daysWithNotes(notes)}</div>
-              </div>
-              <div className="rounded-md bg-card px-2.5 py-2">
-                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Tyg.</div>
-                <div className="text-lg font-semibold tabular-nums">{weekCount}</div>
-              </div>
-            </div>
-            <div className="text-xs text-muted-foreground">
-              Wybrany dzień:{" "}
-              <span className="font-medium text-foreground">
-                {filtersActive ? `${dayNotes.length} / ${dayRawCount}` : dayRawCount}
-              </span>{" "}
-              notatek
-            </div>
-          </div>
-
-          {/* Filter controls */}
-          <div className="px-5 py-4 space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Typ</label>
-              <Select value={filterType} onValueChange={(v) => setFilterType(v as NoteType | "all")}>
-                <SelectTrigger className="h-9 w-full text-sm" aria-label="Filtruj po typie">
-                  <SelectValue placeholder="Typ" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Wszystkie typy</SelectItem>
-                  {NOTE_TYPES.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Status</label>
-              <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as NoteStatus | "all")}>
-                <SelectTrigger className="h-9 w-full text-sm" aria-label="Filtruj po statusie">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Wszystkie statusy</SelectItem>
-                  {NOTE_STATUSES.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>
-                      {s.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Wyróżnienia</label>
-              <button
-                type="button"
-                onClick={() => setFilterHighlight((v) => (v === "yes" ? "all" : "yes"))}
-                aria-pressed={filterHighlight === "yes"}
-                aria-label="Pokaż tylko highlights"
-                className={cn(
-                  "h-9 w-full px-3 rounded-md text-sm inline-flex items-center gap-2 border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  filterHighlight === "yes"
-                    ? "bg-yellow-500/15 text-yellow-300 border-yellow-500/30"
-                    : "border-border text-muted-foreground hover:bg-accent"
-                )}
-              >
-                <Star className={cn("size-4", filterHighlight === "yes" && "fill-yellow-300")} />
-                Tylko highlights
-              </button>
-            </div>
-
-            {filtersActive && (
-              <Button variant="ghost" size="sm" className="w-full text-muted-foreground" onClick={clearFilters}>
-                Wyczyść filtry
-              </Button>
-            )}
-          </div>
-        </aside>
-      )}
 
       <SprintReviewDialog open={reviewOpen} onOpenChange={setReviewOpen} sprint={sprint} notes={notes} onSprintChange={onSprintChange} />
       <EditSprintDialog

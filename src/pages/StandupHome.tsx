@@ -5,7 +5,7 @@ import { SprintView } from "@/components/standup/SprintView";
 import { NewSprintDialog } from "@/components/standup/NewSprintDialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { type Note, type Sprint } from "@/lib/standup";
+import { DEFAULT_FILTERS, type Note, type NoteFilters, type Sprint } from "@/lib/standup";
 import { parseISO } from "date-fns";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
@@ -17,6 +17,7 @@ export function StandupHome() {
   const [newOpen, setNewOpen] = useState(false);
   const [bootstrapping, setBootstrapping] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [filters, setFilters] = useState<NoteFilters>(DEFAULT_FILTERS);
 
   const loadSprints = useCallback(async () => {
     if (!user) return;
@@ -82,12 +83,15 @@ export function StandupHome() {
         onNewSprint={() => setNewOpen(true)}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
+        filters={filters}
+        onFiltersChange={setFilters}
       />
 
       {selectedSprint ? (
         <SprintView
           sprint={selectedSprint}
           notes={sprintNotes}
+          filters={filters}
           onNotesChange={loadAllNotes}
           onSprintChange={async () => {
             await Promise.all([loadSprints(), loadAllNotes()]);
