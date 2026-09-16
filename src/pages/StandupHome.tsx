@@ -9,6 +9,22 @@ import { DEFAULT_FILTERS, type Note, type NoteFilters, type Sprint } from "@/lib
 import { parseISO } from "date-fns";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
+/**
+ * True when a Supabase error means the access token is missing/expired.
+ * PostgREST returns 401 / PGRST301 for an expired JWT.
+ */
+function isAuthError(error: { message?: string; code?: string; status?: number } | null): boolean {
+  if (!error) return false;
+  const message = (error.message ?? "").toLowerCase();
+  return (
+    error.status === 401 ||
+    error.code === "PGRST301" ||
+    message.includes("jwt") ||
+    message.includes("token") ||
+    message.includes("expired")
+  );
+}
+
 export function StandupHome() {
   const { user } = useAuth();
   const [sprints, setSprints] = useState<Sprint[]>([]);
@@ -22,17 +38,50 @@ export function StandupHome() {
   const loadSprints = useCallback(async () => {
     if (!user) return;
     const supabase = getSupabaseBrowserClient();
-    const { data } = await supabase
-      .from("sprints")
-      .select("*")
-      .order("start_date", { ascending: false });
+    const run = () =>
+      supabase.from("sprints").select("*").order("start_date", { ascending: false });
+
+    let { data, error } = await run();
+
+    // Cold tab / overnight: access token may be expired. Refresh once, retry.
+    if (error && isAuthError(error)) {
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) {
+        await supabase.auth.signOut();
+        return;
+      }
+      ({ data, error } = await run());
+    }
+
+    if (error) {
+      console.error("Błąd wczytywania sprintów:", error);
+      return;
+    }
+
     setSprints((data as Sprint[]) ?? []);
   }, [user]);
 
   const loadAllNotes = useCallback(async () => {
     if (!user) return;
     const supabase = getSupabaseBrowserClient();
-    const { data } = await supabase.from("notes").select("*");
+    const run = () => supabase.from("notes").select("*");
+
+    let { data, error } = await run();
+
+    if (error && isAuthError(error)) {
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) {
+        await supabase.auth.signOut();
+        return;
+      }
+      ({ data, error } = await run());
+    }
+
+    if (error) {
+      console.error("Błąd wczytywania notatek:", error);
+      return;
+    }
+
     setNotes((data as Note[]) ?? []);
   }, [user]);
 
@@ -41,6 +90,44 @@ export function StandupHome() {
       await Promise.all([loadSprints(), loadAllNotes()]);
       setBootstrapping(false);
     })();
+  }, [loadSprints, loadAllNotes]);
+
+  // Re-fetch when the tab becomes visible again or the window regains focus
+  // (e.g. returning to the app the next morning). The 2s guard avoids a double
+  // fire from focus + visibilitychange. Token expiry is handled in the loaders.
+  useEffect(() => {
+    let lastRun = 0;
+    const refresh = () => {
+      const now = Date.now();
+      if (now - lastRun < 2000) return;
+      lastRun = now;
+      void loadSprints();
+      void loadAllNotes();
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", refresh);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [loadSprints, loadAllNotes]);
+
+  // React to auth changes so data stays in sync after a token refresh/sign-in.
+  // Deferred with setTimeout to avoid running inside the Supabase auth lock.
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "TOKEN_REFRESHED" || event === "SIGNED_IN") {
+        setTimeout(() => {
+          void loadSprints();
+          void loadAllNotes();
+        }, 0);
+      }
+    });
+    return () => sub.subscription.unsubscribe();
   }, [loadSprints, loadAllNotes]);
 
   // Auto-select first/current sprint
